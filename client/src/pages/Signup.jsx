@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router"
 import { useMutation } from "@tanstack/react-query"
+import Button from "../components/Button.jsx"
 
 const API = "http://localhost:3000/api"
 
@@ -80,13 +81,9 @@ export default function Signup() {
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
           />
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full bg-white text-black py-2 text-sm cursor-pointer hover:bg-zinc-300 disabled:opacity-50"
-          >
+          <Button type="submit" disabled={isPending} className="w-full">
             {isPending ? "Signing up..." : "Sign Up"}
-          </button>
+          </Button>
         </form>
         <p className="mt-3 text-center text-xs text-zinc-400">
           Already have an account?{" "}

@@ -5,7 +5,7 @@ Real-time chat application for COMP 3133 Lab Test 1.
 ## Tech Stack
 
 - **Backend:** Express, Socket.io, Mongoose
-- **Frontend:** React (Vite), TypeScript, Tailwind CSS, React Router, React Query
+- **Frontend:** React (Vite), TypeScript, Tailwind CSS, React Router, React Query, clsx (to merge classNames)
 - **Database:** MongoDB
 
 ## Running

@@ -6,6 +6,7 @@ import "./index.css"
 import Signup from "./pages/Signup.jsx"
 import Login from "./pages/Login.jsx"
 import Chat from "./pages/Chat.jsx"
+import Room from "./pages/Room.jsx"
 import ProtectedRoute from "./components/ProtectedRoute.jsx"
 
 const queryClient = new QueryClient()
@@ -18,6 +19,7 @@ createRoot(document.getElementById("root")).render(
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+          <Route path="/chat/:roomId" element={<ProtectedRoute><Room /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
