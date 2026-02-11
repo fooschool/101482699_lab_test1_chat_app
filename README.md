@@ -11,13 +11,11 @@ Real-time chat application for COMP 3133 Lab Test 1.
 ## Running
 
 ```bash
-# Install dependencies
-cd server && bun install
-cd ../client && bun install
-cd ..
+# Install all dependencies (root, server, client)
+npm install
 
 # Start both server and client
-bun dev
+npm run dev
 ```
 
 Server runs on `http://localhost:3000`, client on `http://localhost:5173`.

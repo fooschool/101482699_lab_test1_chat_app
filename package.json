@@ -2,9 +2,10 @@
   "name": "101482699_lab_test1_chat_app",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"bun run dev:server\" \"bun run dev:client\"",
-    "dev:server": "cd server && bun run dev",
-    "dev:client": "cd client && bun dev"
+    "postinstall": "cd server && npm install && cd ../client && npm install",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
