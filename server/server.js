@@ -110,13 +110,13 @@ io.on("connection", (socket) => {
       // DM typing
       for (const [id, u] of connectedUsers) {
         if (u.username === to_user) {
-          io.to(id).emit("typing", { username: from.username });
+          io.to(id).emit("typing", { username: from.username, type: "dm" });
           break;
         }
       }
     } else {
       // room typing
-      socket.to(from.room).emit("typing", { username: from.username });
+      socket.to(from.room).emit("typing", { username: from.username, type: "room" });
     }
   });
 

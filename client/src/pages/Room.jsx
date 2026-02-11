@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { io } from "socket.io-client";
 import Button from "../components/Button.jsx";
 import Card from "../components/Card.jsx";
+import useTyping from "../hooks/useTyping.js";
 
 export default function Room() {
   const navigate = useNavigate();
@@ -18,8 +19,8 @@ export default function Room() {
   const [dmUser, setDmUser] = useState(null);
   const [dmMessages, setDmMessages] = useState([]);
   const [dmInput, setDmInput] = useState("");
-  const [typingUsers, setTypingUsers] = useState([]);
-  const typingTimers = useRef({});
+  const [roomTyping, addRoomTyping] = useTyping();
+  const [dmTyping, addDmTyping] = useTyping();
 
   useEffect(() => {
     const socket = io("http://localhost:3000");
@@ -45,12 +46,9 @@ export default function Room() {
       setDmMessages(msgs);
     });
 
-    socket.on("typing", ({ username }) => {
-      setTypingUsers((prev) => prev.includes(username) ? prev : [...prev, username]);
-      clearTimeout(typingTimers.current[username]);
-      typingTimers.current[username] = setTimeout(() => {
-        setTypingUsers((prev) => prev.filter((u) => u !== username));
-      }, 2000);
+    socket.on("typing", ({ username, type }) => {
+      if (type === "dm") addDmTyping(username);
+      else addRoomTyping(username);
     });
 
     socket.emit("joinRoom", { room: roomId, username: user.firstname });
@@ -132,7 +130,7 @@ export default function Room() {
             </p>
           ))}
 
-          {typingUsers.length > 0 && <p className="text-zinc-500 text-xs mt-2">{typingUsers.join(", ")} typing...</p>}
+          {roomTyping.length > 0 && <p className="text-zinc-500 text-xs mt-2">{roomTyping.join(", ")} typing...</p>}
           <form onSubmit={sendMessage} className="mt-4">
             <input
               type="text"
@@ -160,7 +158,7 @@ export default function Room() {
               </p>
             ))}
 
-            {typingUsers.length > 0 && <p className="text-zinc-500 text-xs mt-2">{typingUsers.join(", ")} typing...</p>}
+            {dmTyping.length > 0 && <p className="text-zinc-500 text-xs mt-2">{dmTyping.join(", ")} typing...</p>}
             <form onSubmit={sendDm} className="mt-4">
               <input
                 type="text"
