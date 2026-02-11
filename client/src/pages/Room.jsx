@@ -18,6 +18,8 @@ export default function Room() {
   const [dmUser, setDmUser] = useState(null);
   const [dmMessages, setDmMessages] = useState([]);
   const [dmInput, setDmInput] = useState("");
+  const [typingUsers, setTypingUsers] = useState([]);
+  const typingTimers = useRef({});
 
   useEffect(() => {
     const socket = io("http://localhost:3000");
@@ -43,12 +45,24 @@ export default function Room() {
       setDmMessages(msgs);
     });
 
+    socket.on("typing", ({ username }) => {
+      setTypingUsers((prev) => prev.includes(username) ? prev : [...prev, username]);
+      clearTimeout(typingTimers.current[username]);
+      typingTimers.current[username] = setTimeout(() => {
+        setTypingUsers((prev) => prev.filter((u) => u !== username));
+      }, 2000);
+    });
+
     socket.emit("joinRoom", { room: roomId, username: user.firstname });
 
     return () => {
       socket.disconnect();
     };
   }, [roomId]);
+
+  const handleTyping = (to_user) => {
+    socketRef.current.emit("typing", { to_user: to_user || null });
+  };
 
   const sendMessage = (e) => {
     e.preventDefault();
@@ -118,11 +132,13 @@ export default function Room() {
             </p>
           ))}
 
+          {typingUsers.length > 0 && <p className="text-zinc-500 text-xs mt-2">{typingUsers.join(", ")} typing...</p>}
           <form onSubmit={sendMessage} className="mt-4">
             <input
               type="text"
               value={msgInput}
               onChange={(e) => setMsgInput(e.target.value)}
+              onInput={() => handleTyping()}
               placeholder="Type a message..."
               className="w-full bg-black text-white p-2 text-sm outline-none border-b border-white"
             />
@@ -144,11 +160,13 @@ export default function Room() {
               </p>
             ))}
 
+            {typingUsers.length > 0 && <p className="text-zinc-500 text-xs mt-2">{typingUsers.join(", ")} typing...</p>}
             <form onSubmit={sendDm} className="mt-4">
               <input
                 type="text"
                 value={dmInput}
                 onChange={(e) => setDmInput(e.target.value)}
+                onInput={() => handleTyping(dmUser)}
                 placeholder={`Message ${dmUser}...`}
                 className="w-full bg-black text-white p-2 text-sm outline-none border-b border-white"
               />

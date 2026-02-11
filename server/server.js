@@ -102,6 +102,24 @@ io.on("connection", (socket) => {
     socket.emit("privateHistory", history.reverse());
   });
 
+  socket.on("typing", ({ to_user }) => {
+    const from = connectedUsers.get(socket.id);
+    if (!from) return;
+
+    if (to_user) {
+      // DM typing
+      for (const [id, u] of connectedUsers) {
+        if (u.username === to_user) {
+          io.to(id).emit("typing", { username: from.username });
+          break;
+        }
+      }
+    } else {
+      // room typing
+      socket.to(from.room).emit("typing", { username: from.username });
+    }
+  });
+
   socket.on("leaveRoom", () => {
     const user = connectedUsers.get(socket.id);
     if (!user) return;
