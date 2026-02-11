@@ -1,0 +1,12 @@
+{
+  "name": "101482699_lab_test1_chat_app",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"bun run dev:server\" \"bun run dev:client\"",
+    "dev:server": "cd server && bun run dev",
+    "dev:client": "cd client && bun dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
