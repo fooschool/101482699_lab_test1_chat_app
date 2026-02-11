@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router"
 import { useMutation } from "@tanstack/react-query"
 
 const API = "http://localhost:3000/api"
