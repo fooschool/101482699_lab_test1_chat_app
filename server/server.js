@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import mongoose from "mongoose";
 import cors from "cors";
 import authRoutes from "./routes/auth.js";
+import GroupMessage from "./models/GroupMessage.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -37,14 +38,13 @@ const connectedUsers = new Map();
 io.on("connection", (socket) => {
   console.log("socket connected:", socket.id);
 
-  socket.on("joinRoom", ({ room, username }) => {
+  socket.on("joinRoom", async ({ room, username }) => {
     socket.join(room);
     connectedUsers.set(socket.id, { username, room });
 
-    // broadcast to room
-    io.to(room).emit("systemMessage", {
-      text: `${username} joined #${room}`,
-    });
+    // send last 50 messages to the user who joined
+    const history = await GroupMessage.find({ room }).sort({ _id: -1 }).limit(50).lean();
+    socket.emit("messageHistory", history.reverse());
 
     // send updated user list
     const users = [...connectedUsers.values()]
@@ -53,16 +53,25 @@ io.on("connection", (socket) => {
     io.to(room).emit("roomUsers", users);
   });
 
+  socket.on("chatMessage", async ({ message }) => {
+    const user = connectedUsers.get(socket.id);
+    if (!user) return;
+
+    const msg = await GroupMessage.create({
+      from_user: user.username,
+      room: user.room,
+      message,
+    });
+
+    io.to(user.room).emit("chatMessage", msg);
+  });
+
   socket.on("leaveRoom", () => {
     const user = connectedUsers.get(socket.id);
     if (!user) return;
 
     socket.leave(user.room);
     connectedUsers.delete(socket.id);
-
-    io.to(user.room).emit("systemMessage", {
-      text: `${user.username} left #${user.room}`,
-    });
 
     const users = [...connectedUsers.values()]
       .filter((u) => u.room === user.room)
@@ -75,10 +84,6 @@ io.on("connection", (socket) => {
     if (!user) return;
 
     connectedUsers.delete(socket.id);
-
-    io.to(user.room).emit("systemMessage", {
-      text: `${user.username} disconnected`,
-    });
 
     const users = [...connectedUsers.values()]
       .filter((u) => u.room === user.room)

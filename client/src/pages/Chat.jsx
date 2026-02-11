@@ -10,7 +10,8 @@ export default function Chat() {
 
   const [currentRoom, setCurrentRoom] = useState(null)
   const [roomUsers, setRoomUsers] = useState([])
-  const [systemMessages, setSystemMessages] = useState([])
+  const [messages, setMessages] = useState([])
+  const [msgInput, setMsgInput] = useState("")
 
   const { data: rooms = [] } = useQuery({
     queryKey: ["rooms"],
@@ -21,12 +22,16 @@ export default function Chat() {
     const socket = io("http://localhost:3000")
     socketRef.current = socket
 
-    socket.on("systemMessage", (msg) => {
-      setSystemMessages((prev) => [...prev, msg.text])
-    })
-
     socket.on("roomUsers", (users) => {
       setRoomUsers(users)
+    })
+
+    socket.on("chatMessage", (msg) => {
+      setMessages((prev) => [...prev, msg])
+    })
+
+    socket.on("messageHistory", (msgs) => {
+      setMessages(msgs)
     })
 
     return () => {
@@ -37,15 +42,22 @@ export default function Chat() {
   const joinRoom = (roomId) => {
     socketRef.current.emit("joinRoom", { room: roomId, username: user.firstname })
     setCurrentRoom(roomId)
-    setSystemMessages([])
     setRoomUsers([])
+    setMessages([])
   }
 
   const leaveRoom = () => {
     socketRef.current.emit("leaveRoom")
     setCurrentRoom(null)
-    setSystemMessages([])
     setRoomUsers([])
+    setMessages([])
+  }
+
+  const sendMessage = (e) => {
+    e.preventDefault()
+    if (!msgInput.trim()) return
+    socketRef.current.emit("chatMessage", { message: msgInput })
+    setMsgInput("")
   }
 
   const logout = () => {
@@ -87,31 +99,46 @@ export default function Chat() {
   return (
     <div className="min-h-screen bg-black">
       <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-        <span className="text-white text-sm">{user.firstname}</span>
-        <button
-          onClick={logout}
-          className="bg-white text-black py-1.5 px-4 text-sm cursor-pointer hover:bg-zinc-300"
-        >
-          Logout
-        </button>
+        <span className="text-white text-sm">{user.firstname} | #{currentRoom}</span>
+        <div>
+          <button
+            onClick={leaveRoom}
+            className="bg-white text-black py-1.5 px-4 text-sm cursor-pointer hover:bg-zinc-300 mr-2"
+          >
+            Leave Room
+          </button>
+          <button
+            onClick={logout}
+            className="bg-white text-black py-1.5 px-4 text-sm cursor-pointer hover:bg-zinc-300"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       <div className="flex min-h-[calc(100vh-57px)]">
         <div className="m-auto p-4 sm:p-6 rounded-sm ring ring-white/20">
-          <h1 className="text-xl font-bold text-white mb-4">#{currentRoom}</h1>
-
-          <button
-            onClick={leaveRoom}
-            className="bg-white text-black py-2 px-4 text-sm cursor-pointer hover:bg-zinc-300 mb-4"
-          >
-            Leave Room
-          </button>
 
           <p className="text-sm text-zinc-300 mb-2">Online: {roomUsers.join(", ") || "none"}</p>
 
-          {systemMessages.map((msg, i) => (
-            <p key={i} className="text-zinc-500 text-sm">{msg}</p>
+          {messages.map((msg, i) => (
+            <p key={i} className="text-sm text-white">
+              <span className="text-zinc-400">{msg.from_user}: </span>{msg.message}
+            </p>
           ))}
+
+          <form onSubmit={sendMessage} className="mt-4">
+            <input
+              type="text"
+              value={msgInput}
+              onChange={(e) => setMsgInput(e.target.value)}
+              placeholder="Type a message..."
+              className="w-full bg-black text-white p-2 text-sm outline-none border-b border-white"
+            />
+            <button type="submit" className="bg-white text-black py-2 px-4 text-sm cursor-pointer hover:bg-zinc-300 mt-2">
+              Send
+            </button>
+          </form>
         </div>
       </div>
     </div>
