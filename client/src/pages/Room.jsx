@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { io } from "socket.io-client";
 import Button from "../components/Button.jsx";
+import Card from "../components/Card.jsx";
 
 export default function Room() {
   const navigate = useNavigate();
@@ -12,6 +13,11 @@ export default function Room() {
   const [roomUsers, setRoomUsers] = useState([]);
   const [messages, setMessages] = useState([]);
   const [msgInput, setMsgInput] = useState("");
+
+  // private message state
+  const [dmUser, setDmUser] = useState(null);
+  const [dmMessages, setDmMessages] = useState([]);
+  const [dmInput, setDmInput] = useState("");
 
   useEffect(() => {
     const socket = io("http://localhost:3000");
@@ -29,6 +35,14 @@ export default function Room() {
       setMessages(msgs);
     });
 
+    socket.on("privateMessage", (msg) => {
+      setDmMessages((prev) => [...prev, msg]);
+    });
+
+    socket.on("privateHistory", (msgs) => {
+      setDmMessages(msgs);
+    });
+
     socket.emit("joinRoom", { room: roomId, username: user.firstname });
 
     return () => {
@@ -41,6 +55,20 @@ export default function Room() {
     if (!msgInput.trim()) return;
     socketRef.current.emit("chatMessage", { message: msgInput });
     setMsgInput("");
+  };
+
+  const openDm = (username) => {
+    if (username === user.firstname) return;
+    setDmUser(username);
+    setDmMessages([]);
+    socketRef.current.emit("getPrivateHistory", { with_user: username });
+  };
+
+  const sendDm = (e) => {
+    e.preventDefault();
+    if (!dmInput.trim()) return;
+    socketRef.current.emit("privateMessage", { to_user: dmUser, message: dmInput });
+    setDmInput("");
   };
 
   const leaveRoom = () => {
@@ -67,9 +95,20 @@ export default function Room() {
       </div>
 
       <div className="flex flex-1">
-        <div className="m-auto p-4 sm:p-6 rounded-sm ring ring-white/20">
+        <Card>
           <p className="text-sm text-zinc-300 mb-2">
-            Online: {roomUsers.join(", ") || "none"}
+            Online: {roomUsers.map((name, i) => (
+              <span key={i}>
+                {i > 0 && ", "}
+                <span
+                  onClick={() => openDm(name)}
+                  className={name !== user.firstname ? "cursor-pointer underline" : ""}
+                >
+                  {name}
+                </span>
+              </span>
+            ))}
+            {roomUsers.length === 0 && "none"}
           </p>
 
           {messages.map((msg, i) => (
@@ -89,7 +128,34 @@ export default function Room() {
             />
             <Button type="submit" className="mt-2">Send</Button>
           </form>
-        </div>
+        </Card>
+
+        {dmUser && (
+          <Card>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm text-white font-bold">DM with {dmUser}</p>
+              <Button onClick={() => setDmUser(null)} className="ml-4">Close</Button>
+            </div>
+
+            {dmMessages.map((msg, i) => (
+              <p key={i} className="text-sm text-white">
+                <span className="text-zinc-400">{msg.from_user}: </span>
+                {msg.message}
+              </p>
+            ))}
+
+            <form onSubmit={sendDm} className="mt-4">
+              <input
+                type="text"
+                value={dmInput}
+                onChange={(e) => setDmInput(e.target.value)}
+                placeholder={`Message ${dmUser}...`}
+                className="w-full bg-black text-white p-2 text-sm outline-none border-b border-white"
+              />
+              <Button type="submit" className="mt-2">Send</Button>
+            </form>
+          </Card>
+        )}
       </div>
     </div>
   );

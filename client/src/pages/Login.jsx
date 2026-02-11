@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router"
 import { useMutation } from "@tanstack/react-query"
 import Button from "../components/Button.jsx"
+import Card from "../components/Card.jsx"
 
 const API = "http://localhost:3000/api"
 
@@ -35,7 +36,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex bg-black">
-      <div className="bg-black m-auto p-4 sm:p-6 rounded-sm ring ring-white/20">
+      <Card className="bg-black">
         <h1 className="text-xl font-bold mb-5 text-white">Login</h1>
         {error && (
           <div className="bg-red-900/50 border border-red-500 text-red-400 text-sm p-2 mb-3">
@@ -69,7 +70,7 @@ export default function Login() {
           Don't have an account?{" "}
           <Link to="/signup" className="text-blue-400">Sign Up</Link>
         </p>
-      </div>
+      </Card>
     </div>
   )
 }

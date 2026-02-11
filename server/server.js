@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import authRoutes from "./routes/auth.js";
 import GroupMessage from "./models/GroupMessage.js";
+import PrivateMessage from "./models/PrivateMessage.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -64,6 +65,41 @@ io.on("connection", (socket) => {
     });
 
     io.to(user.room).emit("chatMessage", msg);
+  });
+
+  socket.on("privateMessage", async ({ to_user, message }) => {
+    const from = connectedUsers.get(socket.id);
+    if (!from) return;
+
+    const msg = await PrivateMessage.create({
+      from_user: from.username,
+      to_user,
+      message,
+    });
+
+    // find recipient socket
+    for (const [id, u] of connectedUsers) {
+      if (u.username === to_user) {
+        io.to(id).emit("privateMessage", msg);
+        break;
+      }
+    }
+    // also send back to sender
+    socket.emit("privateMessage", msg);
+  });
+
+  socket.on("getPrivateHistory", async ({ with_user }) => {
+    const me = connectedUsers.get(socket.id);
+    if (!me) return;
+
+    const history = await PrivateMessage.find({
+      $or: [
+        { from_user: me.username, to_user: with_user },
+        { from_user: with_user, to_user: me.username },
+      ],
+    }).sort({ _id: -1 }).limit(50).lean();
+
+    socket.emit("privateHistory", history.reverse());
   });
 
   socket.on("leaveRoom", () => {
